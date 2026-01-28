@@ -2,7 +2,7 @@
 set key top center
 set xlabel '|x-y|' font ',18'
 set ylabel 'G(|x-y|)' font ',18' offset -2,0
-set title 'Correlation Function L=16 2-dimensional' font ',18'
+set title 'Correlation Function' font ',18'
 set xtics font ',14'
 set ytics font ',14'
 set grid x,y
@@ -27,7 +27,7 @@ array chi2[50]
 array mu02[50]
 
 nn=11
-L=16
+L=256
 
 do for [i=1:nn] {
 #set style line i pt 1
@@ -57,13 +57,13 @@ set style line 16 lc rgb "#FF6347" pt 1 # Tomato
 f(x,a,mr,c)=a*cosh((x-L/2)/mr)/mr+c
 #f(x,a,mr)=a*(exp(-mr*x)+exp(-mr*(L-x)))/(2.0*mr)
 #f(x,a,mr)=a*cosh(mr*(x-L/2))
-mr=0.8
-a=0.8
-c=0.000001
+#mr=0.01
+#a=0.8
+#c=0.0001
 
 do for [i=1:nn] {
-mr=0.8
-a=0.8
+#mr=0.8
+#a=0.8
 #c=0.0001
 #fit f(x,a,mr) '../data/corrfunc.dat' u 1:column2[i]:column3[i] every ::0::(L-1) via a,mr
 fit f(x,a,mr,c) '../data/corrfunc.dat' u 1:column2[i]:column3[i] every ::0::(L-1) via a,mr,c
