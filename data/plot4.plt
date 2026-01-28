@@ -1,8 +1,8 @@
-set terminal qt size 1350,550
+#set terminal qt size 1350,550
 set key top center
 set xlabel '|x-y|' font ',18'
 set ylabel 'G(|x-y|)' font ',18' offset -2,0
-set title 'Correlation Function L=32' font ',18'
+set title 'Correlation Function L=16 2-dimensional' font ',18'
 set xtics font ',14'
 set ytics font ',14'
 set grid x,y
@@ -59,6 +59,7 @@ f(x,a,mr,c)=a*cosh((x-L/2)/mr)/mr+c
 #f(x,a,mr)=a*cosh(mr*(x-L/2))
 mr=0.8
 a=0.8
+c=0.000001
 
 do for [i=1:nn] {
 mr=0.8
@@ -81,7 +82,7 @@ print mu02[i], mrt[i], mrterr[i]
 set print
 
 #plot for [i=1:nn] '../data/corrfunc.dat' u 1:column2[i]:column3[i] w errorbars notitle linestyle i, for [i=1:nn] f(x,at[i],mrt[i]) title sprintf(' λ_0=%.2f, m_r=%.4f±%.4f, χ^2/dof=%.2f',mu02[i],mrt[i],mrterr[i],chi2[i]) linestyle i lw 2
-plot for [i=1:nn] '../data/corrfunc.dat' u 1:column2[i]:column3[i] w errorbars notitle linestyle i lw 2, for [i=1:nn] f(x,at[i],mrt[i],ct[i]) title sprintf(' μ^2=%.2f, ξ=%.3f(%.0f), χ^2/dof=%.2f',mu02[i],mrt[i],1000*mrterr[i],chi2[i]) linestyle i lw 2
+plot for [i=1:nn] '../data/corrfunc.dat' u 1:column2[i]:column3[i] w errorbars notitle linestyle i lw 2, for [i=1:nn] f(x,at[i],mrt[i],ct[i]) linestyle i lw 2 title sprintf(' μ^2=%.2f, ξ=%.3f(%.0f), χ^2/dof=%.2f',mu02[i],mrt[i],1000*mrterr[i],chi2[i])
 
 
 pause -1

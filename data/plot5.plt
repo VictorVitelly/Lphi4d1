@@ -9,7 +9,7 @@ set bmargin 4
 set key font ',14'
 #set key box vertical width -1 height 1
 #set logscale y
-#set yrange [0.001:2]
+set yrange [0.0:6]
 set xrange [-3.25:0.25]
-p 'results.dat' u 1:2:3 w errorbars notitle lw 2
+p 'results.dat' u 1:2:3 w errorbars lw 2 notitle
 pause -1
