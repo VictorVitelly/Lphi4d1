@@ -57,8 +57,8 @@ set style line 16 lc rgb "#FF6347" pt 1 # Tomato
 f(x,a,mr,c)=a*cosh((x-L/2)/mr)/mr+c
 #f(x,a,mr)=a*(exp(-mr*x)+exp(-mr*(L-x)))/(2.0*mr)
 #f(x,a,mr)=a*cosh(mr*(x-L/2))
-#mr=0.01
-#a=0.8
+mr=0.8
+a=0.8
 #c=0.0001
 
 do for [i=1:nn] {

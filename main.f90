@@ -2,79 +2,12 @@ program main
     use iso_fortran_env, only : dp => real64, i4 => int32
     implicit none
 
-    integer(i4), parameter :: N=128,thermalization=5000,eachsweep=100,Nmsrs=200,Nmsrs2=120
-    integer(i4), parameter :: Nps=11, Mbin(4)=(/5,10,15,20/)
-    real(dp) :: phi(N),dphi=0.5_dp,AR,m0,lambda0=1._dp,mi,mf
-    integer(i4) :: i,i1,j,k
-    real(dp) :: magnet(Nmsrs2),action(Nmsrs2),arate(Nmsrs2)
-    real(dp) :: magnet_ave,magnet_err,action_ave,action_err,arate_ave,arate_err
-    real(dp), allocatable :: corr1(:),corr2(:,:),CF(:,:),CF_ave(:,:),CF_delta(:,:)
-    open(10, file = 'data/history.dat', status = 'replace')
-    open(20, file = 'data/action.dat', status = 'replace')
-    open(30, file = 'data/magnet.dat', status = 'replace')
-    open(60, file = 'data/corrfunc.dat', status = 'replace')
-    mi=0._dp
-    mf=-3._dp
-    allocate(corr1(N))
-    allocate(corr2(N,N))
-    allocate(CF(N,Nmsrs2))
-    allocate(CF_ave(N,Nps))
-    allocate(CF_delta(N,Nps))
-
-    do k=1,Nps
-      phi(:)=0._dp
-      arate(:)=0._dp
-      action(:)=0._dp
-      magnet(:)=0._dp
-      CF(:,:)=0._dp
-      m0=mi+(mf-mi)*real(k-1,dp)/real(Nps-1,dp)
-      do i=1,thermalization
-          call montecarlo(m0,dphi,phi,AR)
-          !write(10,*) i, S(m0,phi)
-      end do
-      do i=1,Nmsrs2
-        corr1(:)=0._dp
-        corr2(:,:)=0._dp
-        do i1=1,Nmsrs
-          do j=1,eachsweep
-            call montecarlo(m0,dphi,phi,AR)
-          end do
-          arate(i)=arate(i)+AR
-          action(i)=action(i)+S(m0,phi)
-          magnet(i)=magnet(i)+abs(phi(1))
-          call correlation(phi,corr1,corr2)
-        end do
-        corr1(:)=corr1(:)/real(Nmsrs,dp)
-        corr2(:,:)=corr2(:,:)/real(Nmsrs,dp)
-        do i1=1,N
-          CF(i1,i)=corr2(i1,1)!-(corr1(1)**2)
-        end do
-      end do
-      arate(:)=arate(:)/real(Nmsrs,dp)
-      action(:)=action(:)/real(Nmsrs,dp)
-      magnet(:)=magnet(:)/real(Nmsrs,dp)
-      do i=1,N
-          call mean_scalar(CF(i,:),CF_ave(i,k),CF_delta(i,k))
-      end do
-
-      call mean_scalar(arate,arate_ave,arate_err)
-      call mean_scalar(action,action_ave,action_err)
-      call mean_scalar(magnet,magnet_ave,magnet_err)
-      write(*,*) m0,arate_ave,arate_err
-      write(20,*) m0,action_ave/real(N,dp), action_err/real(N,dp)
-      !write(30,*) m0,magnet_ave/real(N,dp), magnet_err/real(N,dp)
-      write(30,*) m0,magnet_ave, magnet_err
-    end do
-
-    do k=1,N+1
-      write(60,*) abs(k-1), CF_ave(iv(k),:), CF_delta(iv(k),:)
-    end do
-    close(10)
-    close(20)
-    close(30)
-    close(60)
-    deallocate(corr1,corr2,CF,CF_ave,CF_delta)
-    !call correlate(0._dp,-3.0_dp,11)
+    integer(i4), parameter :: N=16,thermalization=5000,eachsweep=100,Nmsrs=250,Nmsrs2=120
+    integer(i4), parameter :: Mbin(4)=(/5,10,15,20/),bins=201
+    real(dp), parameter :: lambda0=1._dp, maxx=3._dp,minn=-3._dp
+    real(dp), parameter :: binwidth=(maxx-minn)/real(bins,dp)
+    !call vary_mu(0._dp,-3.0_dp,11)
+    call make_histogram(0._dp)
 
 contains
 
@@ -251,57 +184,148 @@ contains
     end do
   end subroutine correlation
 
-  subroutine correlate(mi,mf,Nts)
-  real(dp), intent(in) :: mi,mf
-  real(dp) :: m0,dphi,AR
-  integer(i4) :: Nts
-  real(dp), allocatable :: phi(:),corr1(:),corr2(:,:),CF(:,:),CF_ave(:,:),CF_delta(:,:)
-  integer(i4) :: i,j,k,i2
-  open(60, file = 'data/corrfunc.dat', status = 'replace')
-  allocate(phi(N))
-  allocate(corr1(N))
-  allocate(corr2(N,N))
-  allocate(CF(N,Nmsrs2))
-  allocate(CF_ave(N,Nts))
-  allocate(CF_delta(N,Nts))
+  subroutine vary_mu(mi,mf,Nps)
+    integer(i4), intent(in) :: Nps
+    real(dp), intent(in) :: mi,mf
+    real(dp) :: phi(N),dphi=0.5_dp,AR,m0
+    integer(i4) :: i,i1,j,k
+    real(dp) :: magnet(Nmsrs2),action(Nmsrs2),arate(Nmsrs2)
+    real(dp) :: magnet_ave,magnet_err,action_ave,action_err,arate_ave,arate_err
+    real(dp), allocatable :: corr1(:),corr2(:,:),CF(:,:),CF_ave(:,:),CF_delta(:,:)
+    open(10, file = 'data/history.dat', status = 'replace')
+    open(20, file = 'data/action.dat', status = 'replace')
+    open(30, file = 'data/magnet.dat', status = 'replace')
+    open(60, file = 'data/corrfunc.dat', status = 'replace')
+    allocate(corr1(N))
+    allocate(corr2(N,N))
+    allocate(CF(N,Nmsrs2))
+    allocate(CF_ave(N,Nps))
+    allocate(CF_delta(N,Nps))
 
-  do k=1,Nts
-    CF(:,:)=0._dp
-    m0=mi+(mf-mi)*real(k-1,dp)/real(Nts-1,dp)
-    !dphi=0.45_dp +x0/30._dp
-    !x0=lambi+(lambf-lambi)*real(k-1,dp)/real(Nts-1,dp)
-    write(*,*) m0
-    phi(:)=0._dp
-    do j=1,thermalization
-      call montecarlo(m0,0.5_dp,phi,AR)
-    end do
-    do j=1,Nmsrs2
-      corr1(:)=0._dp
-      corr2(:,:)=0._dp
-      do i=1,Nmsrs
-        do i2=1,eachsweep
-          call montecarlo(m0,0.5_dp,phi,AR)
+    do k=1,Nps
+      phi(:)=0._dp
+      arate(:)=0._dp
+      action(:)=0._dp
+      magnet(:)=0._dp
+      CF(:,:)=0._dp
+      m0=mi+(mf-mi)*real(k-1,dp)/real(Nps-1,dp)
+      do i=1,thermalization
+          call montecarlo(m0,dphi,phi,AR)
+          !write(10,*) i, S(m0,phi)
+      end do
+      do i=1,Nmsrs2
+        corr1(:)=0._dp
+        corr2(:,:)=0._dp
+        do i1=1,Nmsrs
+          do j=1,eachsweep
+            call montecarlo(m0,dphi,phi,AR)
+          end do
+          arate(i)=arate(i)+AR
+          action(i)=action(i)+S(m0,phi)
+          magnet(i)=magnet(i)+abs(phi(1))
+          call correlation(phi,corr1,corr2)
         end do
-        call correlation(phi,corr1,corr2)
+        corr1(:)=corr1(:)/real(Nmsrs,dp)
+        corr2(:,:)=corr2(:,:)/real(Nmsrs,dp)
+        do i1=1,N
+          CF(i1,i)=corr2(i1,1)!-(corr1(1)**2)
+        end do
       end do
-      corr1(:)=corr1(:)/real(Nmsrs,dp)
-      corr2(:,:)=corr2(:,:)/real(Nmsrs,dp)
+      arate(:)=arate(:)/real(Nmsrs,dp)
+      action(:)=action(:)/real(Nmsrs,dp)
+      magnet(:)=magnet(:)/real(Nmsrs,dp)
       do i=1,N
-        CF(i,j)=corr2(i,1) !-(corr1(1)**2)
+          call mean_scalar(CF(i,:),CF_ave(i,k),CF_delta(i,k))
+      end do
+
+      call mean_scalar(arate,arate_ave,arate_err)
+      call mean_scalar(action,action_ave,action_err)
+      call mean_scalar(magnet,magnet_ave,magnet_err)
+      write(*,*) m0,arate_ave,arate_err
+      write(20,*) m0,action_ave/real(N,dp), action_err/real(N,dp)
+      !write(30,*) m0,magnet_ave/real(N,dp), magnet_err/real(N,dp)
+      write(30,*) m0,magnet_ave, magnet_err
+    end do
+
+    do k=1,N+1
+      write(60,*) abs(k-1), CF_ave(iv(k),:), CF_delta(iv(k),:)
+    end do
+    close(10)
+    close(20)
+    close(30)
+    close(60)
+    deallocate(corr1,corr2,CF,CF_ave,CF_delta)
+  end subroutine vary_mu
+
+
+  subroutine histogram(x,A1,A2)
+  real(dp), dimension(:), intent(in) :: x
+  integer(i4), dimension(bins), intent(inout) :: A1
+  real(dp), dimension(bins), intent(in) :: A2
+  integer(i4) :: i,j
+  do i=1,bins
+    do j=1,size(x,dim=1)
+        if(x(j) .le. real(A2(i),dp)+binwidth/2._dp .and. x(j)>real(A2(i),dp)-binwidth/2._dp ) then
+          A1(i)=A1(i)+1
+          cycle
+        end if
+    end do
+  end do
+  end subroutine histogram
+
+  subroutine histogram2(x,A1,A2)
+  real(dp), dimension(:), intent(in) :: x
+  integer(i4), dimension(bins), intent(inout) :: A1
+  real(dp), dimension(bins), intent(in) :: A2
+  integer(i4) :: i
+  real(dp) :: y
+  y=mean(x)/real(N,dp)
+  do i=1,bins
+    if(y .le. real(A2(i),dp)+binwidth/2._dp .and. y>real(A2(i),dp)-binwidth/2._dp ) then
+      A1(i)=A1(i)+1
+    cycle
+    end if
+  end do
+  end subroutine histogram2
+
+  subroutine make_histogram(m0)
+    real(dp), intent(in) :: m0
+    real(dp) :: phi(N),norm,AR,dphi=0.5_dp
+    integer(i4) :: i,j,k
+    real(dp), allocatable :: A2(:)
+    integer(i4), allocatable :: A1(:)
+    open(50, file = 'data/histogram.dat', status = 'replace')
+    allocate(A1(bins))
+    allocate(A2(bins))
+    phi(:)=0._dp
+    do i=1,bins
+      A2(i)=minn+binwidth/2._dp+real(i-1,dp)*binwidth
+    end do
+    A1=0
+
+    do i=1,thermalization
+      call montecarlo(m0,dphi,phi,AR)
+    end do
+
+    do i=1,Nmsrs2
+      do j=1,Nmsrs
+        do k=1,eachsweep
+          call montecarlo(m0,dphi,phi,AR)
+        end do
+        call histogram(phi,A1,A2)
       end do
     end do
-    do j=1,N
-      call mean_scalar(CF(j,:),CF_ave(j,k),CF_delta(j,k))
+
+    norm=0._dp
+    do i=1,bins
+      norm=norm+A1(i)
     end do
-  end do
-
-  do k=1,N+1
-    write(60,*) abs(k-1), CF_ave(iv(k),:), CF_delta(iv(k),:)
-  end do
-
-  deallocate(corr1,corr2,CF,CF_ave,CF_delta)
-  deallocate(phi)
-  close(60)
-  end subroutine correlate
+    norm=norm*(real(maxx-minn,dp) )/real(bins,dp)
+    do i=1,bins
+      write(50,*) A2(i), A1(i)/norm, sqrt( real(A1(i),dp) )/norm
+    end do
+    deallocate(A1,A2)
+    close(50)
+  end subroutine make_histogram
 
 end program main
