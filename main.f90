@@ -4,10 +4,10 @@ program main
 
     integer(i4), parameter :: N=16,thermalization=5000,eachsweep=100,Nmsrs=250,Nmsrs2=120
     integer(i4), parameter :: Mbin(4)=(/5,10,15,20/),bins=201
-    real(dp), parameter :: lambda0=1._dp, maxx=3._dp,minn=-3._dp
+    real(dp), parameter :: lambda0=1._dp, maxx=3._dp,minn=-3._dp,dphi=0.48_dp
     real(dp), parameter :: binwidth=(maxx-minn)/real(bins,dp)
-    !call vary_mu(0._dp,-3.0_dp,11)
-    call make_histogram(0._dp)
+    call vary_mu(-3.0_dp,-3.0_dp,11)
+    !call make_histogram(0._dp)
 
 contains
 
@@ -187,7 +187,7 @@ contains
   subroutine vary_mu(mi,mf,Nps)
     integer(i4), intent(in) :: Nps
     real(dp), intent(in) :: mi,mf
-    real(dp) :: phi(N),dphi=0.5_dp,AR,m0
+    real(dp) :: phi(N),AR,m0
     integer(i4) :: i,i1,j,k
     real(dp) :: magnet(Nmsrs2),action(Nmsrs2),arate(Nmsrs2)
     real(dp) :: magnet_ave,magnet_err,action_ave,action_err,arate_ave,arate_err
@@ -290,7 +290,7 @@ contains
 
   subroutine make_histogram(m0)
     real(dp), intent(in) :: m0
-    real(dp) :: phi(N),norm,AR,dphi=0.5_dp
+    real(dp) :: phi(N),norm,AR
     integer(i4) :: i,j,k
     real(dp), allocatable :: A2(:)
     integer(i4), allocatable :: A1(:)
