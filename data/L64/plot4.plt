@@ -18,7 +18,7 @@ set key right
 
 
 nn=51
-L=128
+L=64
 mi=3.0
 mf=-5.0
 

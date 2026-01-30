@@ -18,7 +18,7 @@ set key right
 
 
 nn=51
-L=128
+L=16
 mi=3.0
 mf=-5.0
 
@@ -57,7 +57,7 @@ set style line 14 lc rgb "#9ACD32" pt 1 # Yellow Green
 set style line 15 lc rgb "#BA55D3" pt 1 # Medium Orchid
 set style line 16 lc rgb "#FF6347" pt 1 # Tomato
 
-f(x,a,mr,c)=a*cosh((x-L/2)/mr)/mr+c
+f(x,a,mr,c)=a*cosh((x-L/2)/mr)+c
 #f(x,a,mr)=a*(exp(-mr*x)+exp(-mr*(L-x)))/(2.0*mr)
 #f(x,a,mr)=a*cosh(mr*(x-L/2))
 mr=2.1
@@ -69,7 +69,7 @@ do for [i=1:nn] {
 #a=0.8
 #c=0.0001
 #fit f(x,a,mr) '../data/corrfunc.dat' u 1:column2[i]:column3[i] every ::0::(L-1) via a,mr
-fit f(x,a,mr,c) '../data/corrfunc.dat' u 1:column2[i]:column3[i] every ::1::62 via a,mr,c
+fit f(x,a,mr,c) 'corrfunc.dat' u 1:column2[i]:column3[i] every ::0::(L-1) via a,mr,c
 at[i]=a
 aterr[i]=a_err
 mrt[i]=mr
@@ -85,7 +85,7 @@ print mu02[i], mrt[i], mrterr[i]
 set print
 
 #plot for [i=1:nn] '../data/corrfunc.dat' u 1:column2[i]:column3[i] w errorbars notitle linestyle i, for [i=1:nn] f(x,at[i],mrt[i]) title sprintf(' λ_0=%.2f, m_r=%.4f±%.4f, χ^2/dof=%.2f',mu02[i],mrt[i],mrterr[i],chi2[i]) linestyle i lw 2
-plot for [i=1:nn] '../data/corrfunc.dat' u 1:column2[i]:column3[i] w errorbars notitle linestyle i lw 2, for [i=1:nn] f(x,at[i],mrt[i],ct[i]) linestyle i lw 2 title sprintf(' μ^2=%.2f, ξ=%.3f(%.0f), χ^2/dof=%.2f',mu02[i],mrt[i],1000*mrterr[i],chi2[i])
+plot for [i=1:nn] 'corrfunc.dat' u 1:column2[i]:column3[i] w errorbars notitle linestyle i lw 2, for [i=1:nn] f(x,at[i],mrt[i],ct[i]) linestyle i lw 2 title sprintf(' μ^2=%.2f, ξ=%.3f(%.0f), χ^2/dof=%.2f',mu02[i],mrt[i],1000*mrterr[i],chi2[i])
 
 
 pause -1

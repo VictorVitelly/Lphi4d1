@@ -2,11 +2,11 @@ program main
     use iso_fortran_env, only : dp => real64, i4 => int32
     implicit none
 
-    integer(i4), parameter :: N=64,thermalization=5000,eachsweep=1000,Nmsrs=500,Nmsrs2=120
+    integer(i4), parameter :: N=128,thermalization=5000,eachsweep=500,Nmsrs=100,Nmsrs2=120
     integer(i4), parameter :: Mbin(5)=(/4,5,10,15,20/),bins=201
     real(dp), parameter :: lambda0=1._dp, maxx=3._dp,minn=-3._dp,dphi=0.5_dp
     real(dp), parameter :: binwidth=(maxx-minn)/real(bins,dp)
-    call vary_mu(0.0_dp,-5.0_dp,21)
+    call vary_mu(3.0_dp,-5.0_dp,51)
     !call make_histogram(0._dp)
 
 contains
