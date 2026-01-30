@@ -9,8 +9,8 @@ set bmargin 4
 set key font ',14'
 #set key box vertical width -1 height 1
 #set logscale y
-set yrange [0:1.6]
-set xrange [-3.25:0.25]
+#set yrange [0:1.6]
+#set xrange [-3.25:0.25]
 set multiplot layout 1,2
 
 

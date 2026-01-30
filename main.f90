@@ -2,11 +2,11 @@ program main
     use iso_fortran_env, only : dp => real64, i4 => int32
     implicit none
 
-    integer(i4), parameter :: N=16,thermalization=5000,eachsweep=100,Nmsrs=250,Nmsrs2=120
-    integer(i4), parameter :: Mbin(4)=(/5,10,15,20/),bins=201
-    real(dp), parameter :: lambda0=1._dp, maxx=3._dp,minn=-3._dp,dphi=0.48_dp
+    integer(i4), parameter :: N=64,thermalization=5000,eachsweep=1000,Nmsrs=500,Nmsrs2=120
+    integer(i4), parameter :: Mbin(5)=(/4,5,10,15,20/),bins=201
+    real(dp), parameter :: lambda0=1._dp, maxx=3._dp,minn=-3._dp,dphi=0.5_dp
     real(dp), parameter :: binwidth=(maxx-minn)/real(bins,dp)
-    call vary_mu(-3.0_dp,-3.0_dp,11)
+    call vary_mu(0.0_dp,-5.0_dp,21)
     !call make_histogram(0._dp)
 
 contains
@@ -189,12 +189,14 @@ contains
     real(dp), intent(in) :: mi,mf
     real(dp) :: phi(N),AR,m0
     integer(i4) :: i,i1,j,k
-    real(dp) :: magnet(Nmsrs2),action(Nmsrs2),arate(Nmsrs2)
+    real(dp) :: magnet(Nmsrs2),magnetps(Nmsrs2),action(Nmsrs2),arate(Nmsrs2)
     real(dp) :: magnet_ave,magnet_err,action_ave,action_err,arate_ave,arate_err
+    real(dp) :: magnetps_ave,magnetps_err
     real(dp), allocatable :: corr1(:),corr2(:,:),CF(:,:),CF_ave(:,:),CF_delta(:,:)
     open(10, file = 'data/history.dat', status = 'replace')
     open(20, file = 'data/action.dat', status = 'replace')
     open(30, file = 'data/magnet.dat', status = 'replace')
+    open(40, file = 'data/magnetps.dat', status = 'replace')
     open(60, file = 'data/corrfunc.dat', status = 'replace')
     allocate(corr1(N))
     allocate(corr2(N,N))
@@ -207,6 +209,7 @@ contains
       arate(:)=0._dp
       action(:)=0._dp
       magnet(:)=0._dp
+      magnetps(:)=0._dp
       CF(:,:)=0._dp
       m0=mi+(mf-mi)*real(k-1,dp)/real(Nps-1,dp)
       do i=1,thermalization
@@ -216,24 +219,27 @@ contains
       do i=1,Nmsrs2
         corr1(:)=0._dp
         corr2(:,:)=0._dp
+        phi(:)=-phi(:)
         do i1=1,Nmsrs
           do j=1,eachsweep
             call montecarlo(m0,dphi,phi,AR)
           end do
           arate(i)=arate(i)+AR
           action(i)=action(i)+S(m0,phi)
-          magnet(i)=magnet(i)+abs(phi(1))
+          magnet(i)=magnet(i)+abs(mean(phi))
+          magnetps(i)=magnetps(i)+abs(phi(1))
           call correlation(phi,corr1,corr2)
         end do
         corr1(:)=corr1(:)/real(Nmsrs,dp)
         corr2(:,:)=corr2(:,:)/real(Nmsrs,dp)
         do i1=1,N
-          CF(i1,i)=corr2(i1,1)!-(corr1(1)**2)
+          CF(i1,i)=corr2(i1,1)!-(corr1(1)*corr1(i1))
         end do
       end do
       arate(:)=arate(:)/real(Nmsrs,dp)
       action(:)=action(:)/real(Nmsrs,dp)
       magnet(:)=magnet(:)/real(Nmsrs,dp)
+      magnetps(:)=magnetps(:)/real(Nmsrs,dp)
       do i=1,N
           call mean_scalar(CF(i,:),CF_ave(i,k),CF_delta(i,k))
       end do
@@ -241,10 +247,11 @@ contains
       call mean_scalar(arate,arate_ave,arate_err)
       call mean_scalar(action,action_ave,action_err)
       call mean_scalar(magnet,magnet_ave,magnet_err)
+      call mean_scalar(magnetps,magnetps_ave,magnetps_err)
       write(*,*) m0,arate_ave,arate_err
       write(20,*) m0,action_ave/real(N,dp), action_err/real(N,dp)
-      !write(30,*) m0,magnet_ave/real(N,dp), magnet_err/real(N,dp)
-      write(30,*) m0,magnet_ave, magnet_err
+      write(30,*) m0,magnet_ave/real(N,dp), magnet_err/real(N,dp)
+      write(40,*) m0,magnetps_ave, magnetps_err
     end do
 
     do k=1,N+1
@@ -253,6 +260,7 @@ contains
     close(10)
     close(20)
     close(30)
+    close(40)
     close(60)
     deallocate(corr1,corr2,CF,CF_ave,CF_delta)
   end subroutine vary_mu

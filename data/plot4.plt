@@ -16,24 +16,27 @@ set key right
 #set yrange [0.001:2]
 #set xrange [0:32]
 
-array column2[50]
-array column3[50]
-array at[50]
-array mrt[50]
-array aterr[50]
-array mrterr[50]
-array ct[50]
-array chi2[50]
-array mu02[50]
 
-nn=11
-L=16
+nn=21
+L=64
+mi=0.0
+mf=-5.0
+
+array column2[nn]
+array column3[nn]
+array at[nn]
+array mrt[nn]
+array aterr[nn]
+array mrterr[nn]
+array ct[nn]
+array chi2[nn]
+array mu02[nn]
 
 do for [i=1:nn] {
 #set style line i pt 1
 column2[i]=1+i
 column3[i]=1+nn+i
-mu02[i]=0.+(-3.0+0.0)*(i-1)/(nn-1)
+mu02[i]=mi+(mf-mi)*(i-1)/(nn-1)
 #mu02[i]=-1.265+(-1.285+1.265)*(i-1)/(nn-1)
 }
 
@@ -57,8 +60,8 @@ set style line 16 lc rgb "#FF6347" pt 1 # Tomato
 f(x,a,mr,c)=a*cosh((x-L/2)/mr)/mr+c
 #f(x,a,mr)=a*(exp(-mr*x)+exp(-mr*(L-x)))/(2.0*mr)
 #f(x,a,mr)=a*cosh(mr*(x-L/2))
-mr=2.2
-a=0.8
+mr=1.1
+a=0.1
 #c=0.0001
 
 do for [i=1:nn] {
@@ -66,7 +69,7 @@ do for [i=1:nn] {
 #a=0.8
 #c=0.0001
 #fit f(x,a,mr) '../data/corrfunc.dat' u 1:column2[i]:column3[i] every ::0::(L-1) via a,mr
-fit f(x,a,mr,c) '../data/corrfunc.dat' u 1:column2[i]:column3[i] every ::0::(L-1) via a,mr,c
+fit f(x,a,mr,c) '../data/corrfunc.dat' u 1:column2[i]:column3[i] every ::1::31 via a,mr,c
 at[i]=a
 aterr[i]=a_err
 mrt[i]=mr
