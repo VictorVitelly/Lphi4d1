@@ -2,7 +2,7 @@ program main
     use iso_fortran_env, only : dp => real64, i4 => int32
     implicit none
 
-    integer(i4), parameter :: N=128,thermalization=5000,eachsweep=500,Nmsrs=100,Nmsrs2=120
+    integer(i4), parameter :: N=256,thermalization=5000,eachsweep=1000,Nmsrs=400,Nmsrs2=120
     integer(i4), parameter :: Mbin(5)=(/4,5,10,15,20/),bins=201
     real(dp), parameter :: lambda0=1._dp, maxx=3._dp,minn=-3._dp,dphi=0.5_dp
     real(dp), parameter :: binwidth=(maxx-minn)/real(bins,dp)
@@ -177,7 +177,7 @@ contains
     real(dp) :: xx
     integer(i4) :: i1,i2
     do i1=1,N
-      corr1(i1)=corr1(i1)+abs(phi(i1))
+      !corr1(i1)=corr1(i1)+abs(phi(i1))
       do i2=1,N
         corr2(i1,i2)=corr2(i1,i2)+(phi(i1)*phi(i2))
       end do
